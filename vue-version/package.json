@@ -1,0 +1,17 @@
+{
+  "name": "meituan-vue-script",
+  "version": "1.0.0",
+  "description": "Meituan store helper with Vue UI",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.0.8"
+  }
+}
