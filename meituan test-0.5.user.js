@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         meituan test
+// @name         meituan test10
 // @namespace    http://tampermonkey.net/
 // @version      0.5
 // @description  dowmload All file in store
@@ -66,7 +66,7 @@
       const styles = document.createElement("style");
       styles.id = "mt-helper-style";
       styles.textContent = `
-  .mt-helper-container {
+  .main-container {
     position: fixed;
     top: 110px;
     right: 160px;
@@ -77,9 +77,10 @@
     gap: 6px;
   }
 
-  .mt-helper-main-button,
-  .mt-helper-sub-button,
-  .mt-helper-sub-button-small{
+  .main-btn,
+  .sub-product-btn,
+  .sub-mt-btn,
+  .sub-jd-btn{
     padding: 8px 12px;
     background-color: #000000;
     color: white;
@@ -91,57 +92,55 @@
     transition: opacity 0.3s;
   }
 
-  .mt-helper-sub-button-small {
-    padding: 6px 10px;
-    font-size: 12px;
+ 
+  .sub-mt-container {
+    display: flex;
+    position: relative; 
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    
   }
 
-  .mt-helper-sub-container2 {
+  .sub-mt-container2 {
+    gap: 12px;
     animation: slideDown 0.2s ease-out;
+    position: absolute;
+  left: 100%;
+  top: 0;
+  min-width:100%;
   }
 
-  .mt-helper-sub-mt-container {
+
+.sub-mt-some-btn,
+.sub-mt-all-btn {
+padding: 8px 12px;
+    background-color: #000000;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  white-space: nowrap;     /* ✅ 防换行 */
+}
+
+  .main-btn:hover,
+.sub-product-btn:hover,
+.sub-mt-btn:hover,
+.sub-mt-some-btn:hover,
+.sub-mt-all-btn:hover,
+.sub-jd-btn:hover {
+  opacity: 0.8;
+}
+
+  .sub-container,
+  .sub-mt-container,
+  .sub-mt-container2 {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 6px;
   }
-
-  .mt-helper-sub-mt-container2 {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-    animation: slideDown 0.2s ease-out;
-  }
-
-  .mt-helper-main-button {
-    font-size: 15px;
-  }
-
-  .mt-helper-main-button:hover,
-  .mt-helper-sub-button:hover,
-  .mt-helper-sub-button-small:hover {
-    opacity: 0.8;
-  }
-
-  .mt-helper-sub-container1,
-  .mt-helper-sub-container2,
-  .mt-helper-sub-container3 {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-  }
-
-  .mt-helper-sub-container1 {
-    animation: slideDown 0.2s ease-out;
-  }
-
-  .mt-helper-sub-container3 {
-    animation: slideDown 0.2s ease-out;
-  }
-
   @keyframes slideDown {
     from {
       opacity: 0;
@@ -155,22 +154,22 @@
       document.head.appendChild(styles);
     }
 
-    const container = document.createElement("div");
-    container.id = "mt-helper-container";
-    container.className = "mt-helper-container";
+    const mainContainer = document.createElement("div");
+    mainContainer.id = "main-container";
+    mainContainer.className = "main-container";
 
-    const mainButton = document.createElement("button");
-    mainButton.className = "mt-helper-main-button";
-    mainButton.textContent = "工具按钮";
+    const mainBtn = document.createElement("button");
+    mainBtn.className = "main-btn";
+    mainBtn.textContent = "工具按钮";
 
-    const subContainer1 = document.createElement("div");
-    subContainer1.className = "mt-helper-sub-container1";
-    subContainer1.style.display = "none";
+    const subContainer = document.createElement("div");
+    subContainer.className = "sub-mt-container";
+    subContainer.style.display = "none";
 
-    const productButton = document.createElement("button");
-    productButton.className = "mt-helper-sub-button";
-    productButton.textContent = "商品列表";
-    productButton.onclick = () => {
+    const subProductBtn = document.createElement("button");
+    subProductBtn.className = "sub-product-btn";
+    subProductBtn.textContent = "商品列表";
+    subProductBtn.onclick = () => {
       window.__mtProductEable = true;
       const productListBtn = document.querySelector(
         '[data-key="Sub.ProductManageList"]',
@@ -184,98 +183,77 @@
       alert("未找到商品列表");
     };
 
-    const mtContainer = document.createElement("div");
-    mtContainer.className = "mt-helper-sub-mt-container";
+    const subMTContainer = document.createElement("div");
+    subMTContainer.className = "sub-mt-container";
 
-    const mtButton = document.createElement("button");
-    mtButton.className = "mt-helper-sub-button";
-    mtButton.textContent = "美团";
+    const subMTBtn = document.createElement("button");
+    subMTBtn.className = "sub-mt-btn";
+    subMTBtn.textContent = "美团";
 
-    const mtContainer2 = document.createElement("div");
-    mtContainer2.className = "mt-helper-sub-mt-container2";
-    mtContainer2.style.display = "none";
+    const subMTContainer2 = document.createElement("div");
+    subMTContainer2.className = "sub-mt-container2";
+    subMTContainer2.style.display = "none";
 
-    const mtSomeButton = document.createElement("button");
-    mtSomeButton.className = "mt-helper-sub-button-small";
-    mtSomeButton.textContent = "下载勾选";
-    mtSomeButton.onclick = () => {
+    const subMTSomeBtn = document.createElement("button");
+    subMTSomeBtn.className = "sub-mt-some-btn";
+    subMTSomeBtn.textContent = "下载勾选";
+    subMTSomeBtn.onclick = () => {
       if (window.__mtDownloadSomeImage) return;
       window.__mtDownloadSomeImage = true;
 
+      
       try {
         const iframedoc = getIframedoc();
         if (!iframedoc) {
           alert("拿不到iframedoc3");
           return;
         }
-
+        //先抓取勾选商品
         const selected = Array.from(
           iframedoc.querySelectorAll(".roo-checkbox input:checked"),
         ).map((input) => {
           const row = input.closest("tr");
-
           return {
             id: row?.dataset?.rowKey, // ✅ 正确拿ID
-            name: row.innerText,
           };
         });
-
+        console.log(selected)
+        
+        //匹配hook数据
         const piclist = window.__mtAllProductOrder || [];
         if (!piclist.length) {
           alert("未捕获到商品列表，请先打开商品列表页面");
           return;
         }
-        const newpiclist = [];
-        for (const s of selected) {
-          const s_id = s.id;
-          for (const item of piclist) {
+        const newpiclist = new Map();
+        for(const pic of piclist){
+          if(!newpiclist.has(pic.id)){
+            
+            newpiclist.set(pic.id,[])
           }
+          newpiclist.get(pic.id).push({
+            name:pic.name,
+            pictures:pic.pictures||[],
+          })
         }
-
-        const pic_url = [];
-        for (const pic_spu of piclist) {
-          //多图
-          const pics = Array.isArray(pic_spu.pictures) ? pic_spu.pictures : [];
-          pics.forEach((url, index) => {
-            if (!url || !url.startsWith("http")) {
-              return;
-            }
-            pic_url.push({
-              id: pic_spu.id,
-              name: pic_spu.name,
-              url,
-              picindex: index,
-            });
-          });
-        }
-        const picgroups = new Map();
-        for (const item of pic_url) {
-          const key = item.name;
-          if (!picgroups.has(key)) {
-            picgroups.set(key, []);
-          }
-          picgroups.get(key).push(item.url);
-        }
-        console.log(picgroups);
-        return picgroups;
-
-        console.log("选中的ID:", selected);
+        
+        
       } finally {
         window.__mtDownloadSomeImage = false;
       }
     };
 
-    const mtAllButton = document.createElement("button");
-    mtAllButton.className = "mt-helper-sub-button-small";
-    mtAllButton.textContent = "下载所有";
-    mtAllButton.onclick = async () => {
+    const subMTAllBtn = document.createElement("button");
+    subMTAllBtn.className = "sub-mt-all-btn";
+    subMTAllBtn.textContent = "下载所有";
+    subMTAllBtn.onclick = async () => {
       hookJSONParse();
       if (window.__mtDownloadAllImage) return;
       window.__mtDownloadAllImage = true;
       try {
         window.__mtAllProductOrder = [];
         window.__mtLastPushedSig = "";
-        productButton.onclick();
+        subProductBtn.onclick();
         await wait(2500);
         const all = await autofetchpage();
         window.__mtAllProductOrder = all;
@@ -290,40 +268,40 @@
       }
     };
 
-    const jdButton = document.createElement("button");
-    jdButton.className = "mt-helper-sub-button";
-    jdButton.textContent = "京东";
-    jdButton.onclick = () => {
+    const subJDBtn = document.createElement("button");
+    subJDBtn.className = "sub-jd-btn";
+    subJDBtn.textContent = "京东";
+    subJDBtn.onclick = () => {
       alert("京东下载功能开发中");
     };
 
-    container.addEventListener("mouseenter", () => {
-      subContainer1.style.display = "flex";
+    mainContainer.addEventListener("mouseenter", () => {
+      subContainer.style.display = "flex";
     });
-    container.addEventListener("mouseleave", () => {
-      subContainer1.style.display = "none";
-      mtContainer2.style.display = "none";
-    });
-
-    mtContainer.addEventListener("mouseenter", () => {
-      mtContainer2.style.display = "flex";
-    });
-    mtContainer.addEventListener("mouseleave", () => {
-      mtContainer2.style.display = "none";
+    mainContainer.addEventListener("mouseleave", () => {
+      subContainer.style.display = "none";
+      subMTContainer2.style.display = "none";
     });
 
-    mtContainer2.appendChild(mtSomeButton);
-    mtContainer2.appendChild(mtAllButton);
-    mtContainer.appendChild(mtButton);
-    mtContainer.appendChild(mtContainer2);
+    subMTContainer.addEventListener("mouseenter", () => {
+      subMTContainer2.style.display = "flex";
+    });
+    subMTContainer.addEventListener("mouseleave", () => {
+      subMTContainer2.style.display = "none";
+    });
 
-    subContainer1.appendChild(productButton);
-    subContainer1.appendChild(mtContainer);
-    subContainer1.appendChild(jdButton);
+    subMTContainer2.appendChild(subMTSomeBtn);
+    subMTContainer2.appendChild(subMTAllBtn);
+    subMTContainer.appendChild(subMTBtn);
+    subMTContainer.appendChild(subMTContainer2);
 
-    container.appendChild(mainButton);
-    container.appendChild(subContainer1);
-    document.body.appendChild(container);
+    subContainer.appendChild(subProductBtn);
+    subContainer.appendChild(subMTContainer);
+    subContainer.appendChild(subJDBtn);
+
+    mainContainer.appendChild(mainBtn);
+    mainContainer.appendChild(subContainer);
+    document.body.appendChild(mainContainer);
   };
   //提取文件json数据
   function getproductList() {

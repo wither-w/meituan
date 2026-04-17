@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         meituan test
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.1
 // @description  dowmload All file in store
 // @author       wither
 // @match        https://shangoue.meituan.com/*
