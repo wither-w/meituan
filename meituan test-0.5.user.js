@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         meituan test10
+// @name         meituan 2.0
 // @namespace    http://tampermonkey.net/
 // @version      0.5
 // @description  dowmload All file in store
