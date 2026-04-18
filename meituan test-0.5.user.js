@@ -197,11 +197,10 @@ padding: 8px 12px;
     const subMTSomeBtn = document.createElement("button");
     subMTSomeBtn.className = "sub-mt-some-btn";
     subMTSomeBtn.textContent = "下载勾选";
-    subMTSomeBtn.onclick = () => {
+    subMTSomeBtn.onclick = async () => {
       if (window.__mtDownloadSomeImage) return;
       window.__mtDownloadSomeImage = true;
 
-      
       try {
         const iframedoc = getIframedoc();
         if (!iframedoc) {
@@ -217,27 +216,43 @@ padding: 8px 12px;
             id: row?.dataset?.rowKey, // ✅ 正确拿ID
           };
         });
-        console.log(selected)
-        
+
         //匹配hook数据
         const piclist = window.__mtAllProductOrder || [];
         if (!piclist.length) {
           alert("未捕获到商品列表，请先打开商品列表页面");
           return;
         }
-        const newpiclist = new Map();
-        for(const pic of piclist){
-          if(!newpiclist.has(pic.id)){
-            
-            newpiclist.set(pic.id,[])
+        const piclistmap = new Map();
+        for (const pic of piclist) {
+          if (!piclistmap.has(pic.id)) {
+            piclistmap.set(pic.id, []);
           }
-          newpiclist.get(pic.id).push({
-            name:pic.name,
-            pictures:pic.pictures||[],
-          })
+          const pic_url = Array.isArray(pic.pictures) ? pic.pictures : [];
+          const newpicurl = [];
+          pic_url.forEach((url, index) => {
+            if (!url || !url.startsWith("http")) return;
+            newpicurl.push(url);
+          });
+          piclistmap.set(pic.id, {
+            name: pic.name,
+            pictures: newpicurl || [],
+          });
         }
-        
-        
+        const picgroups = [];
+        for (const item of selected) {
+          const value = piclistmap.get(Number(item.id));
+          picgroups.push({
+            id: item.id,
+            name: value.name,
+            urls: value.pictures,
+          });
+        }
+        if (!picgroups || picgroups.size === 0) {
+          alert("未抓到可下载图片");
+          return;
+        }
+        await toimageZip(picgroups);
       } finally {
         window.__mtDownloadSomeImage = false;
       }
@@ -253,7 +268,7 @@ padding: 8px 12px;
       try {
         window.__mtAllProductOrder = [];
         window.__mtLastPushedSig = "";
-        subProductBtn.onclick();
+        //subProductBtn.onclick();
         await wait(2500);
         const all = await autofetchpage();
         window.__mtAllProductOrder = all;
@@ -499,29 +514,6 @@ padding: 8px 12px;
       console.log("拿不到 iframe doc", e);
       return null;
     }
-
-    // const iframedocs = Array.from(document.querySelectorAll("iframe"));
-    // const iframe = document.querySelector("#hashframe");
-    // const doc = iframe.contentDocument;
-
-    // console.log(iframedocs);
-
-    // if (!iframedocs.length) {
-    //   alert("拿不到iframe1");
-    //   console.log("1");
-    // }
-    // console.log("2");
-    // for (const f of iframedocs) {
-    //   try {
-    //     const win = f.contentWindow;
-    //     const href = win?.location?.href || "";
-    //     if (href.includes("/reuse/sc/product/views/product/list")) {
-    //       console.log("3");
-    //       return win.document;
-    //     }
-    //   } catch (e) {}
-    // }
-    // return null;
   }
   //保存图片
   function downsavepic() {
@@ -530,31 +522,20 @@ padding: 8px 12px;
       alert("未捕获到商品列表，请先打开商品列表页面");
       return;
     }
-    const pic_url = [];
-    for (const pic_spu of piclist) {
-      //多图
-      const pics = Array.isArray(pic_spu.pictures) ? pic_spu.pictures : [];
-      pics.forEach((url, index) => {
-        if (!url || !url.startsWith("http")) {
-          return;
-        }
-        pic_url.push({
-          id: pic_spu.id,
-          name: pic_spu.name,
-          url,
-          picindex: index,
-        });
+    const picgroups = [];
+    for (const pic of piclist) {
+      const pic_url = Array.isArray(pic.pictures) ? pic.pictures : [];
+      const newpicurl = [];
+      pic_url.forEach((url, index) => {
+        if (!url || !url.startsWith("http")) return;
+        newpicurl.push(url);
+      });
+      picgroups.push({
+        id: pic.id,
+        name: pic.name,
+        urls: newpicurl,
       });
     }
-    const picgroups = new Map();
-    for (const item of pic_url) {
-      const key = item.name;
-      if (!picgroups.has(key)) {
-        picgroups.set(key, []);
-      }
-      picgroups.get(key).push(item.url);
-    }
-    console.log(picgroups);
     return picgroups;
   }
 
@@ -563,9 +544,11 @@ padding: 8px 12px;
     const image_zip = new JSZip();
     //文件夹名字清理函数
     function sanitizeFolderName(name) {
-      return (name || "unknown").replace(/[\/\\:*?"<>|]/g, "_").trim();
+      return name.replace(/[\/\\:*?"<>|]/g, "_").trim();
     }
-    for (const [name, urls] of picgroups.entries()) {
+    for (const item of picgroups) {
+      const urls = item.urls || [];
+      const name = item.name;
       const folder = image_zip.folder(sanitizeFolderName(name));
       for (let i = 0; i < urls.length; i++) {
         const url = urls[i];
@@ -583,6 +566,7 @@ padding: 8px 12px;
         folder.file(filename, blob);
       }
     }
+    console.log("保存压缩包");
     const zipBlob = await image_zip.generateAsync({ type: "blob" });
     downloadBlob("meituan_images.zip", zipBlob);
   }
