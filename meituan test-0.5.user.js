@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         meituan 2.0
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.7
 // @description  dowmload All file in store
 // @author       wither
 // @match        https://shangoue.meituan.com/*
@@ -113,7 +113,8 @@
 
 
 .sub-mt-some-btn,
-.sub-mt-all-btn {
+.sub-mt-all-btn,
+.subMTCsvBtn {
 padding: 8px 12px;
     background-color: #000000;
     color: white;
@@ -129,7 +130,8 @@ padding: 8px 12px;
 .sub-mt-btn:hover,
 .sub-mt-some-btn:hover,
 .sub-mt-all-btn:hover,
-.sub-jd-btn:hover {
+.sub-jd-btn:hover,
+.subMTCsvBtn {
   opacity: 0.8;
 }
 
