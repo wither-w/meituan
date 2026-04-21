@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         meituan test10
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  dowmload All file in store
 // @author       wither
 // @match        https://shangoue.meituan.com/*
@@ -267,6 +267,19 @@ padding: 8px 12px;
         window.__mtDownloadAllImage = false;
       }
     };
+    const subMTCsvBtn = document.createElement("button");
+    subMTCsvBtn.className = "sub-mt-csv-btn";
+    subMTCsvBtn.textContent = "下载文档";
+    subMTAllBtn.onclick = async () =>{
+      if (window.__mtDownloadCsv) return;
+            window.__mtDownloadCsv = true;
+            try {
+                getproductList();
+            } finally {
+                setTimeout(() => { window.__mtDownloadCsv = false; }, 300);
+                window.__mtAllProductOrder = [];// 清空已下载列表
+            }
+    };
 
     const subJDBtn = document.createElement("button");
     subJDBtn.className = "sub-jd-btn";
@@ -292,6 +305,7 @@ padding: 8px 12px;
 
     subMTContainer2.appendChild(subMTSomeBtn);
     subMTContainer2.appendChild(subMTAllBtn);
+    subMTContainer2.appendChild(subMTCsvBtn);
     subMTContainer.appendChild(subMTBtn);
     subMTContainer.appendChild(subMTContainer2);
 
