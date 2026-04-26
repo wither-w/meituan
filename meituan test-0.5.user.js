@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         meituan 2.0
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.8
 // @description  dowmload All file in store
 // @author       wither
 // @match        https://shangoue.meituan.com/*
@@ -275,7 +275,7 @@ padding: 8px 12px;
         const all = await autofetchpage();
         window.__mtAllProductOrder = all;
         const picgroups = downsavepic();
-        if (!picgroups || picgroups.size === 0) {
+        if (!picgroups || picgroups.length === 0) {
           alert("未抓到可下载图片");
           return;
         }
@@ -287,15 +287,17 @@ padding: 8px 12px;
     const subMTCsvBtn = document.createElement("button");
     subMTCsvBtn.className = "sub-mt-csv-btn";
     subMTCsvBtn.textContent = "下载文档";
-    subMTAllBtn.onclick = async () =>{
+    subMTAllBtn.onclick = async () => {
       if (window.__mtDownloadCsv) return;
-            window.__mtDownloadCsv = true;
-            try {
-                getproductList();
-            } finally {
-                setTimeout(() => { window.__mtDownloadCsv = false; }, 300);
-                window.__mtAllProductOrder = [];// 清空已下载列表
-            }
+      window.__mtDownloadCsv = true;
+      try {
+        getproductList();
+      } finally {
+        setTimeout(() => {
+          window.__mtDownloadCsv = false;
+        }, 300);
+        window.__mtAllProductOrder = []; // 清空已下载列表
+      }
     };
 
     const subJDBtn = document.createElement("button");
@@ -554,37 +556,75 @@ padding: 8px 12px;
     }
     return picgroups;
   }
+  //处理名字
+  function sanitizeFolderName(name) {
+    return name.replace(/[\/\\:*?"<>|]/g, "_").trim();
+  }
 
   //建立image_zip
   async function toimageZip(picgroups) {
     const image_zip = new JSZip();
-    //文件夹名字清理函数
-    function sanitizeFolderName(name) {
-      return name.replace(/[\/\\:*?"<>|]/g, "_").trim();
-    }
-    for (const item of picgroups) {
-      const urls = item.urls || [];
-      const name = item.name;
-      const folder = image_zip.folder(sanitizeFolderName(name));
-      for (let i = 0; i < urls.length; i++) {
-        const url = urls[i];
-        const safeUrl = url.replace(/^http:\/\//, "https://"); // 混合内容问题
-
-        const res = await fetch(safeUrl);
-        if (!res.ok) {
-          console.warn("下载失败", res.status, safeUrl);
-          continue;
-        }
-        const blob = await res.blob();
-
-        // 文件名：按顺序命名，你也可以改成 001.jpg 这种
-        const filename = `${name}-${i + 1}.jpg`;
-        folder.file(filename, blob);
-      }
-    }
-    console.log("保存压缩包");
+    //同时处理5个商品
+    await processGroupsParallel(picgroups, image_zip, 5);
+    console.log("开始打包");
     const zipBlob = await image_zip.generateAsync({ type: "blob" });
     downloadBlob("meituan_images.zip", zipBlob);
+  }
+  //多商品并发
+  async function processGroupsParallel(picgroups, zip, outerlimit = 5) {
+    let index = 0;
+    async function worker() {
+      while (index < picgroups.length) {
+        let i = index++;
+        const group = picgroups[i];
+        await processGroup(group, zip, 10);
+      }
+    }
+    const workers = Array.from({ length: outerlimit }, () => worker());
+    await Promise.all(workers);
+  }
+  //单个商品处理（一个文件夹）
+  async function processGroup(group, zip, innerLimit = 10) {
+    const safeName = sanitizeFolderName(group.name);
+    const folder = zip.folder(safeName);
+    const tasks = (group.urls || []).map((url, i) => ({
+      url,
+      name: group.name,
+      index: i,
+    }));
+    const results = await fetchWithLimit(tasks, innerLimit);
+    results.forEach((res) => {
+      if (!res) return;
+      // 文件名：按顺序命名，你也可以改成 001.jpg 这种
+      const filename = `${res.name}-${res.index + 1}.jpg`;
+      folder.file(filename, res.blob);
+    });
+  }
+
+  async function fetchWithLimit(tasks, innerLimit) {
+    const results = [];
+    let index = 0;
+    async function worker() {
+      while (index < tasks.length) {
+        const i = index++;
+        const task = tasks[i];
+        try {
+          const res = await fetch(task.url);
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          results[i] = {
+            blob,
+            name: task.name,
+            index: task.index,
+          };
+        } catch (e) {
+          console.warn("下载失败", task.url, e);
+        }
+      }
+    }
+    const workers = Array.from({ length: innerLimit }, () => worker());
+    await Promise.all(workers);
+    return results;
   }
 
   function downloadBlob(filename, blob) {
