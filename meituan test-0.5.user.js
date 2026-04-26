@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         meituan 2.0
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.9
 // @description  dowmload All file in store
 // @author       wither
 // @match        https://shangoue.meituan.com/*
@@ -250,7 +250,7 @@ padding: 8px 12px;
             urls: value.pictures,
           });
         }
-        if (!picgroups || picgroups.size === 0) {
+        if (!picgroups || picgroups.length === 0) {
           alert("未抓到可下载图片");
           return;
         }
@@ -287,10 +287,12 @@ padding: 8px 12px;
     const subMTCsvBtn = document.createElement("button");
     subMTCsvBtn.className = "sub-mt-csv-btn";
     subMTCsvBtn.textContent = "下载文档";
-    subMTAllBtn.onclick = async () => {
+    subMTCsvBtn.onclick = async () => {
       if (window.__mtDownloadCsv) return;
       window.__mtDownloadCsv = true;
       try {
+        const all = await autofetchpage();
+        window.__mtAllProductOrder = all;
         getproductList();
       } finally {
         setTimeout(() => {
@@ -609,8 +611,12 @@ padding: 8px 12px;
         const i = index++;
         const task = tasks[i];
         try {
-          const res = await fetch(task.url);
-          if (!res.ok) continue;
+          const safeUrl = task.url.replace(/^http:\/\//, "https://");
+          const res = await fetch(safeUrl);
+          if (!res.ok) {
+            console.warn("下载失败", res.status, safeUrl);
+            continue;
+          }
           const blob = await res.blob();
           results[i] = {
             blob,
